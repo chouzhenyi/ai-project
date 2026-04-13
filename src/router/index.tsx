@@ -1,20 +1,25 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Outlet } from "react-router-dom";
 import { Suspense, lazy } from "react";
 
 const Home = lazy(() => import("../views/Home"));
 const About = lazy(() => import("../views/About"));
 
+const Layout = () => {
+  return (
+    <div style={{ padding: "20px" }}>
+      <h1>企业级应用</h1>
+      <nav>
+        <a href="/">首页</a> | <a href="/about">关于</a>
+      </nav>
+      <Outlet />
+    </div>
+  );
+};
+
 const router = createBrowserRouter([
   {
     path: "/",
-    element: (
-      <div style={{ padding: "20px" }}>
-        <h1>企业级应用</h1>
-        <nav>
-          <a href="/">首页</a> | <a href="/about">关于</a>
-        </nav>
-      </div>
-    ),
+    element: <Layout />,
     children: [
       {
         index: true,
