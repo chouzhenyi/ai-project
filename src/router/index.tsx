@@ -1,17 +1,30 @@
-import { createBrowserRouter, Outlet } from "react-router-dom";
+import { createBrowserRouter, Outlet, useNavigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
+import { Menu } from "@alifd/next";
 
 const Home = lazy(() => import("../views/Home"));
 const About = lazy(() => import("../views/About"));
+const Form = lazy(() => import("../views/Form"));
+
+const menuItems = [
+  { key: "/", label: "首页" },
+  { key: "/form", label: "表单" },
+  { key: "/about", label: "关于" },
+];
 
 const Layout = () => {
+  const navigate = useNavigate();
+
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>企业级应用</h1>
-      <nav>
-        <a href="/">首页</a> | <a href="/about">关于</a>
-      </nav>
-      <Outlet />
+    <div style={{ display: "flex", minHeight: "100vh" }}>
+      <Menu style={{ width: 200 }} onItemClick={(key: string) => navigate(key)}>
+        {menuItems.map((item) => (
+          <Menu.Item key={item.key}>{item.label}</Menu.Item>
+        ))}
+      </Menu>
+      <div style={{ flex: 1, padding: "20px" }}>
+        <Outlet />
+      </div>
     </div>
   );
 };
@@ -26,6 +39,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<div>加载中...</div>}>
             <Home />
+          </Suspense>
+        ),
+      },
+      {
+        path: "form",
+        element: (
+          <Suspense fallback={<div>加载中...</div>}>
+            <Form />
           </Suspense>
         ),
       },

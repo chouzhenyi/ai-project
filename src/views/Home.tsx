@@ -1,10 +1,26 @@
-import { Button } from "@alifd/next";
+import { Table } from "@alifd/next";
 
 const Home = () => {
+  const columns = [
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "Age",
+      dataIndex: "age",
+      key: "age",
+    },
+    {
+      title: "Address",
+      dataIndex: "address",
+      key: "address",
+    },
+  ];
   return (
     <div>
-      <h2>首页</h2>
-      <Button type="primary">主要按钮</Button>
+      <Table columns={columns} dataSource={[]} />
     </div>
   );
 };
