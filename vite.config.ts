@@ -24,6 +24,9 @@ export default defineConfig({
     },
   },
   css: {
+    lightningcss: {
+      errorRecovery: true,
+    },
     preprocessorOptions: {
       less: { javascriptEnabled: true },
     },
@@ -36,9 +39,21 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          "react-vendor": ["react", "react-dom", "react-router-dom"],
-          "next-vendor": ["@alifd/next"],
+        manualChunks(id) {
+          if (
+            id.includes("node_modules") &&
+            (id.includes("react") ||
+              id.includes("react-dom") ||
+              id.includes("react-router"))
+          ) {
+            return "react-vendor";
+          }
+          if (
+            id.includes("node_modules") &&
+            id.includes("@alifd/next")
+          ) {
+            return "next-vendor";
+          }
         },
       },
     },

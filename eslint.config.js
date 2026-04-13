@@ -17,6 +17,7 @@ export default tseslint.config(
       ...tseslint.configs.recommended,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
+      prettierConfig,
     ],
     languageOptions: {
       ecmaVersion: 2020,
@@ -37,17 +38,12 @@ export default tseslint.config(
     rules: {
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
+      "react-refresh/only-export-components": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         { argsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/no-explicit-any": "warn",
     },
-  },
-  {
-    rules: {
-      "prettier/prettier": "error",
-    },
-  },
-  prettierConfig
+  }
 );
