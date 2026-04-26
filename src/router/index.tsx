@@ -1,28 +1,35 @@
-import { createBrowserRouter, Outlet, useNavigate } from "react-router-dom";
+import { createBrowserRouter, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { Menu } from "@alifd/next";
 
 const Home = lazy(() => import("../views/Home"));
 const About = lazy(() => import("../views/About"));
 const Form = lazy(() => import("../views/Form"));
+const Table = lazy(() => import("../views/Table"));
 
 const menuItems = [
   { key: "/", label: "首页" },
-  { key: "/form", label: "表单" },
+  { key: "/form", label: "表单示例" },
+  { key: "/table", label: "表格示例" },
   { key: "/about", label: "关于" },
 ];
 
 const Layout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
-      <Menu style={{ width: 200 }} onItemClick={(key: string) => navigate(key)}>
+      <Menu
+        style={{ width: 200 }}
+        selectedKeys={[location.pathname]}
+        onItemClick={(key: string) => navigate(key)}
+      >
         {menuItems.map((item) => (
           <Menu.Item key={item.key}>{item.label}</Menu.Item>
         ))}
       </Menu>
-      <div style={{ flex: 1, padding: "20px" }}>
+      <div style={{ flex: 1, padding: "20px", overflow: "auto" }}>
         <Outlet />
       </div>
     </div>
@@ -47,6 +54,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<div>加载中...</div>}>
             <Form />
+          </Suspense>
+        ),
+      },
+      {
+        path: "table",
+        element: (
+          <Suspense fallback={<div>加载中...</div>}>
+            <Table />
           </Suspense>
         ),
       },
