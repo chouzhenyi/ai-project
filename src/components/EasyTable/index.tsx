@@ -230,7 +230,9 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
     });
 
     // ── 操作列 ──
-    if (showActions && actions.length > 0) {
+    const hasActionsColumn =
+      showActions && (actions.length > 0 || (editable && editMode === "row"));
+    if (hasActionsColumn) {
       cols.push({
         key: "__actions__",
         title: actionsTitle,
