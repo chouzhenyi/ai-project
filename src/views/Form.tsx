@@ -900,13 +900,13 @@ const FormDemo = () => {
   return (
     <div style={{ padding: 24 }}>
       <h2 style={{ marginBottom: 24 }}>EasyForm 配置化表单示例</h2>
-      <Tabs>
-        {items.map((item) => (
-          <Tabs.TabPane key={item.key} tab={item.tab}>
-            <Card style={{ marginTop: 16 }}>{item.content}</Card>
-          </Tabs.TabPane>
-        ))}
-      </Tabs>
+      <Tabs
+        items={items.map((item) => ({
+          key: item.key,
+          label: item.tab,
+          children: <Card style={{ marginTop: 16 }}>{item.content}</Card>,
+        }))}
+      />
     </div>
   );
 };

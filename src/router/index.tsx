@@ -34,45 +34,48 @@ const Layout = () => {
   );
 };
 
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Layout />,
-    children: [
-      {
-        index: true,
-        element: (
-          <Suspense fallback={<div>加载中...</div>}>
-            <Home />
-          </Suspense>
-        ),
-      },
-      {
-        path: "form",
-        element: (
-          <Suspense fallback={<div>加载中...</div>}>
-            <Form />
-          </Suspense>
-        ),
-      },
-      {
-        path: "table",
-        element: (
-          <Suspense fallback={<div>加载中...</div>}>
-            <Table />
-          </Suspense>
-        ),
-      },
-      {
-        path: "about",
-        element: (
-          <Suspense fallback={<div>加载中...</div>}>
-            <About />
-          </Suspense>
-        ),
-      },
-    ],
-  },
-]);
+const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <Layout />,
+      children: [
+        {
+          index: true,
+          element: (
+            <Suspense fallback={<div>加载中...</div>}>
+              <Home />
+            </Suspense>
+          ),
+        },
+        {
+          path: "form",
+          element: (
+            <Suspense fallback={<div>加载中...</div>}>
+              <Form />
+            </Suspense>
+          ),
+        },
+        {
+          path: "table",
+          element: (
+            <Suspense fallback={<div>加载中...</div>}>
+              <Table />
+            </Suspense>
+          ),
+        },
+        {
+          path: "about",
+          element: (
+            <Suspense fallback={<div>加载中...</div>}>
+              <About />
+            </Suspense>
+          ),
+        },
+      ],
+    },
+  ],
+  { future: { v7_startTransition: true } },
+);
 
 export default router;
