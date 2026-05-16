@@ -47,6 +47,7 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
   const {
     data,
     selectedKeys,
+    setSelectedKeys,
     editingKey,
     editData,
     tableInstance,
@@ -67,11 +68,12 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
   const handleSelectionChange = useCallback(
     (keys: React.Key[]) => {
       const typedKeys = keys as (string | number)[];
+      setSelectedKeys(typedKeys);
       const keySet = new Set(typedKeys);
       const rows = data.filter((item) => keySet.has(getRowKeyValue(item)));
       onSelectionChange?.(typedKeys, rows);
     },
-    [data, getRowKeyValue, onSelectionChange],
+    [data, getRowKeyValue, onSelectionChange, setSelectedKeys],
   );
 
   const handleCellChange = useCallback(

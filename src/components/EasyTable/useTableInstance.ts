@@ -279,6 +279,7 @@ export function useTableInstance(options: UseTableInstanceOptions) {
   return {
     data,
     selectedKeys,
+    setSelectedKeys,
     editingKey,
     editData,
     errors,
