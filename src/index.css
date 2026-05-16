@@ -107,7 +107,3 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
-
-.easy-table-zebra-row td {
-  background: #fafafa;
-}

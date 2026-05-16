@@ -1,0 +1,23 @@
+.easy-table-toolbar {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.easy-table-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.easy-table-pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.easy-table-zebra-row td {
+  background: #fafafa;
+}

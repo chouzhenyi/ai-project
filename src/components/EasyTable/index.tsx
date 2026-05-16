@@ -7,399 +7,11 @@ import React, {
   useMemo,
   useEffect,
 } from "react";
-import {
-  Table,
-  Button,
-  Input,
-  Select,
-  InputNumber,
-  DatePicker,
-  Switch,
-  Checkbox,
-  Radio,
-  message,
-  Popconfirm,
-  Pagination,
-} from "antd";
-import dayjs from "dayjs";
-
-// ============ 类型定义 ============
-
-export interface TableOptionItem {
-  label: string;
-  value: string | number;
-  disabled?: boolean;
-}
-
-export type ColumnType =
-  | "text"
-  | "input"
-  | "number"
-  | "select"
-  | "date"
-  | "switch"
-  | "checkbox"
-  | "radio"
-  | "custom";
-
-export type EditableControl =
-  | boolean
-  | ((record: Record<string, unknown>, rowIndex: number) => boolean);
-
-export type VisibleControl =
-  | boolean
-  | ((record: Record<string, unknown>, rowIndex: number) => boolean);
-
-export type DisabledControl =
-  | boolean
-  | ((record: Record<string, unknown>, rowIndex: number, column: ColumnSchema) => boolean);
-
-export interface ColumnSchema {
-  key: string;
-  title: string;
-  dataIndex: string;
-  width?: number | string;
-  align?: "left" | "center" | "right";
-  fixed?: "left" | "right";
-  sortable?: boolean;
-  filterable?: boolean;
-  type?: ColumnType;
-  editable?: EditableControl;
-  visible?: VisibleControl;
-  disabled?: DisabledControl;
-  options?:
-    | TableOptionItem[]
-    | ((record: Record<string, unknown>, rowIndex: number) => TableOptionItem[]);
-  placeholder?: string;
-  format?: (value: unknown, record: Record<string, unknown>, rowIndex: number) => React.ReactNode;
-  render?: (value: unknown, record: Record<string, unknown>, rowIndex: number) => React.ReactNode;
-  editRender?: (props: EditRenderProps) => React.ReactNode;
-  onChange?: (
-    value: unknown,
-    record: Record<string, unknown>,
-    rowIndex: number,
-    column: ColumnSchema,
-  ) => void;
-  validator?: (
-    value: unknown,
-    record: Record<string, unknown>,
-    rowIndex: number,
-  ) => string | boolean | Promise<string | boolean>;
-  min?: number;
-  max?: number;
-  precision?: number;
-  required?: boolean;
-  dateFormat?: string;
-  componentProps?: Record<string, unknown>;
-}
-
-export interface EditRenderProps {
-  value: unknown;
-  onChange: (value: unknown) => void;
-  disabled: boolean;
-  record: Record<string, unknown>;
-  rowIndex: number;
-  column: ColumnSchema;
-  onSave: () => void;
-  onCancel: () => void;
-}
-
-export interface ActionSchema {
-  key: string;
-  text?: string;
-  type?: "primary" | "secondary" | "normal";
-  visible?: boolean | ((record: Record<string, unknown>, rowIndex: number) => boolean);
-  disabled?: boolean | ((record: Record<string, unknown>, rowIndex: number) => boolean);
-  onClick?: (record: Record<string, unknown>, rowIndex: number) => void;
-  confirm?: string;
-  danger?: boolean;
-}
-
-export interface TableInstance {
-  getData: () => Record<string, unknown>[];
-  setData: (data: Record<string, unknown>[]) => void;
-  getSelectedRows: () => Record<string, unknown>[];
-  setSelectedRows: (keys: (string | number)[]) => void;
-  addRow: (row?: Record<string, unknown>, index?: number) => void;
-  deleteRows: (keys: (string | number)[]) => void;
-  updateRow: (key: string | number, data: Record<string, unknown>) => void;
-  getChanges: () => {
-    added: Record<string, unknown>[];
-    modified: Record<string, unknown>[];
-    removed: Record<string, unknown>[];
-  };
-  clearChanges: () => void;
-  startEdit: (key: string | number) => void;
-  cancelEdit: () => void;
-  saveEdit: () => boolean;
-  validate: () => Promise<{ valid: boolean; errors: Record<string, string[]> }>;
-  refresh: () => void;
-}
-
-export interface EasyTableProps {
-  columns: ColumnSchema[];
-  dataSource?: Record<string, unknown>[];
-  rowKey?: string;
-  editable?: boolean;
-  editMode?: "row" | "cell";
-  showIndex?: boolean;
-  indexTitle?: string;
-  indexWidth?: number;
-  showActions?: boolean;
-  actions?: ActionSchema[];
-  actionsTitle?: string;
-  actionsWidth?: number;
-  showSelection?: boolean;
-  selectionWidth?: number;
-  onSelectionChange?: (
-    selectedKeys: (string | number)[],
-    selectedRows: Record<string, unknown>[],
-  ) => void;
-  onChange?: (
-    data: Record<string, unknown>[],
-    changes: {
-      added: Record<string, unknown>[];
-      modified: Record<string, unknown>[];
-      removed: Record<string, unknown>[];
-    },
-  ) => void;
-  pagination?:
-    | false
-    | {
-        current?: number;
-        pageSize?: number;
-        total?: number;
-        onChange?: (current: number, pageSize: number) => void;
-      };
-  loading?: boolean;
-  emptyContent?: React.ReactNode;
-  hasBorder?: boolean;
-  isZebra?: boolean;
-  style?: React.CSSProperties;
-  className?: string;
-  getRowProps?: (
-    record: Record<string, unknown>,
-    index: number,
-  ) => React.HTMLAttributes<HTMLElement>;
-  maxBodyHeight?: number | string;
-  fixedHeader?: boolean;
-  defaultRowData?: Record<string, unknown>;
-  showAddButton?: boolean;
-  addButtonText?: string;
-  onAddClick?: () => void;
-  showDeleteButton?: boolean;
-  deleteButtonText?: string;
-  deleteConfirmText?: string;
-  onDelete?: (keys: (string | number)[], rows: Record<string, unknown>[]) => void;
-  renderToolbar?: (table: TableInstance) => React.ReactNode;
-  renderFooter?: (table: TableInstance) => React.ReactNode;
-}
-
-// ============ 编辑单元格组件 ============
-
-interface EditCellProps {
-  column: ColumnSchema;
-  record: Record<string, unknown>;
-  rowIndex: number;
-  value: unknown;
-  onSave: () => void;
-  onCancel: () => void;
-  onValueChange: (value: unknown) => void;
-}
-
-const EditCell: React.FC<EditCellProps> = ({
-  column,
-  record,
-  rowIndex,
-  value,
-  onSave,
-  onCancel,
-  onValueChange,
-}) => {
-  const {
-    type = "text",
-    options,
-    placeholder,
-    disabled: disabledControl,
-    min,
-    max,
-    precision,
-    dateFormat = "YYYY-MM-DD",
-    componentProps = {},
-    editRender,
-  } = column;
-
-  const disabled =
-    typeof disabledControl === "function"
-      ? disabledControl(record, rowIndex, column)
-      : disabledControl === true;
-
-  const getOptions = (): TableOptionItem[] => {
-    if (typeof options === "function") {
-      return options(record, rowIndex);
-    }
-    return options || [];
-  };
-
-  if (editRender) {
-    return (
-      <>
-        {editRender({
-          value,
-          onChange: onValueChange,
-          disabled,
-          record,
-          rowIndex,
-          column,
-          onSave,
-          onCancel,
-        })}
-      </>
-    );
-  }
-
-  switch (type) {
-    case "input":
-      return (
-        <Input
-          value={value as string}
-          onChange={(e) => onValueChange(e.target.value)}
-          disabled={disabled}
-          placeholder={placeholder}
-          style={{ width: "100%" }}
-          {...componentProps}
-        />
-      );
-
-    case "number":
-      return (
-        <InputNumber
-          value={value as number}
-          onChange={(val) => onValueChange(val)}
-          disabled={disabled}
-          placeholder={placeholder}
-          min={min}
-          max={max}
-          precision={precision}
-          style={{ width: "100%" }}
-          {...componentProps}
-        />
-      );
-
-    case "select":
-      return (
-        <Select
-          value={value as string | number}
-          onChange={(val) => onValueChange(val)}
-          disabled={disabled}
-          placeholder={placeholder}
-          options={getOptions()}
-          style={{ width: "100%" }}
-          {...componentProps}
-        />
-      );
-
-    case "date":
-      return (
-        <DatePicker
-          value={value ? dayjs(value as string, dateFormat) : undefined}
-          onChange={(dayjsValue) => {
-            onValueChange(dayjsValue ? dayjsValue.format(dateFormat) : undefined);
-          }}
-          disabled={disabled}
-          placeholder={placeholder}
-          format={dateFormat}
-          style={{ width: "100%" }}
-          {...componentProps}
-        />
-      );
-
-    case "switch":
-      return (
-        <Switch
-          checked={Boolean(value)}
-          onChange={(checked) => onValueChange(checked)}
-          disabled={disabled}
-          {...componentProps}
-        />
-      );
-
-    case "checkbox":
-      return (
-        <Checkbox.Group
-          value={value as (string | number)[]}
-          onChange={(vals) => onValueChange(vals)}
-          disabled={disabled}
-          options={getOptions()}
-          {...componentProps}
-        />
-      );
-
-    case "radio":
-      return (
-        <Radio.Group
-          value={value as string | number}
-          onChange={(e) => onValueChange(e.target.value)}
-          disabled={disabled}
-          options={getOptions()}
-          {...componentProps}
-        />
-      );
-
-    case "custom":
-      return (
-        <span style={{ color: "#999", fontStyle: "italic" }}>
-          custom 类型需要通过 editRender 提供编辑组件
-        </span>
-      );
-
-    default:
-      return <span>{String(value ?? "")}</span>;
-  }
-};
-
-// ============ 分页组件 ============
-
-interface PaginationBarProps {
-  pagination?: {
-    current?: number;
-    pageSize?: number;
-    total?: number;
-    onChange?: (current: number, pageSize: number) => void;
-  };
-  dataLength: number;
-}
-
-const PaginationBar: React.FC<PaginationBarProps> = ({ pagination, dataLength }) => {
-  const total = pagination?.total ?? dataLength;
-  const pageSize = pagination?.pageSize ?? 10;
-  const current = pagination?.current ?? 1;
-
-  if (total <= pageSize && !pagination?.total) return null;
-
-  return (
-    <div
-      style={{
-        marginTop: 16,
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
-      <Pagination
-        current={current}
-        pageSize={pageSize}
-        total={total}
-        showSizeChanger
-        showQuickJumper
-        pageSizeOptions={[10, 20, 50, 100]}
-        showTotal={(t) => `共 ${t} 条`}
-        onChange={(page, size) => pagination?.onChange?.(page, size)}
-      />
-    </div>
-  );
-};
-
-// ============ 主表格组件 ============
+import { Table, Button, Switch, message, Popconfirm } from "antd";
+import type { ColumnSchema, EasyTableProps, TableInstance } from "./types";
+import EditCell from "./EditCell";
+import PaginationBar from "./PaginationBar";
+import "./styles.css";
 
 const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
   const {
@@ -478,7 +90,6 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
 
   useEffect(() => {
     if (externalData) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setData(externalData);
     }
   }, [externalData]);
@@ -493,6 +104,24 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
       return record[rowKey] as string | number;
     },
     [rowKey],
+  );
+
+  /** 不可变更新 changesRef：避免内部 mutation 导致外部持有旧引用时数据不一致 */
+  const updateChanges = useCallback(
+    (
+      updater: (prev: {
+        added: Record<string, unknown>[];
+        modified: Record<string, unknown>[];
+        removed: Record<string, unknown>[];
+      }) => {
+        added: Record<string, unknown>[];
+        modified: Record<string, unknown>[];
+        removed: Record<string, unknown>[];
+      },
+    ) => {
+      changesRef.current = updater(changesRef.current);
+    },
+    [],
   );
 
   const tableInstance = useMemo<TableInstance>(
@@ -516,7 +145,10 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
             ? [...current.slice(0, index), newRow, ...current.slice(index)]
             : [...current, newRow];
         setData(newData);
-        changesRef.current.added.push(newRow);
+        updateChanges((prev) => ({
+          ...prev,
+          added: [...prev.added, newRow],
+        }));
         onChangeRef.current?.(newData, changesRef.current);
       },
       deleteRows: (keys) => {
@@ -526,16 +158,23 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
         setData(newData);
         setSelectedKeys([]);
         const trulyRemoved: Record<string, unknown>[] = [];
-        for (const row of removedRows) {
-          const key = getRowKeyValue(row);
-          const addedIndex = changesRef.current.added.findIndex((r) => getRowKeyValue(r) === key);
-          if (addedIndex !== -1) {
-            changesRef.current.added.splice(addedIndex, 1);
-          } else {
-            trulyRemoved.push(row);
+        updateChanges((prev) => {
+          let newAdded = prev.added;
+          for (const row of removedRows) {
+            const key = getRowKeyValue(row);
+            const addedIndex = newAdded.findIndex((r) => getRowKeyValue(r) === key);
+            if (addedIndex !== -1) {
+              newAdded = newAdded.filter((_, i) => i !== addedIndex);
+            } else {
+              trulyRemoved.push(row);
+            }
           }
-        }
-        changesRef.current.removed.push(...trulyRemoved);
+          return {
+            added: newAdded,
+            modified: prev.modified,
+            removed: [...prev.removed, ...trulyRemoved],
+          };
+        });
         onChangeRef.current?.(newData, changesRef.current);
       },
       updateRow: (key, rowData) => {
@@ -546,18 +185,25 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
         setData(newData);
         const updatedRow = newData.find((item) => getRowKeyValue(item) === key);
         if (updatedRow && !changesRef.current.added.find((r) => getRowKeyValue(r) === key)) {
-          const existingModified = changesRef.current.modified.find(
-            (r) => getRowKeyValue(r) === key,
-          );
-          if (existingModified) {
-            Object.assign(existingModified, updatedRow);
-          } else {
-            changesRef.current.modified.push(updatedRow);
-          }
+          updateChanges((prev) => {
+            const hasExisting = prev.modified.some((r) => getRowKeyValue(r) === key);
+            return {
+              ...prev,
+              modified: hasExisting
+                ? prev.modified.map((r) =>
+                    getRowKeyValue(r) === key ? { ...r, ...updatedRow } : r,
+                  )
+                : [...prev.modified, updatedRow],
+            };
+          });
         }
         onChangeRef.current?.(newData, changesRef.current);
       },
-      getChanges: () => ({ ...changesRef.current }),
+      getChanges: () => ({
+        added: [...changesRef.current.added],
+        modified: [...changesRef.current.modified],
+        removed: [...changesRef.current.removed],
+      }),
       clearChanges: () => {
         changesRef.current = { added: [], modified: [], removed: [] };
       },
@@ -587,14 +233,17 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
           setData(newData);
           const updatedRow = newData.find((item) => getRowKeyValue(item) === key);
           if (updatedRow && !changesRef.current.added.find((r) => getRowKeyValue(r) === key)) {
-            const existingModified = changesRef.current.modified.find(
-              (r) => getRowKeyValue(r) === key,
-            );
-            if (existingModified) {
-              Object.assign(existingModified, updatedRow);
-            } else {
-              changesRef.current.modified.push(updatedRow);
-            }
+            updateChanges((prev) => {
+              const hasExisting = prev.modified.some((r) => getRowKeyValue(r) === key);
+              return {
+                ...prev,
+                modified: hasExisting
+                  ? prev.modified.map((r) =>
+                      getRowKeyValue(r) === key ? { ...r, ...updatedRow } : r,
+                    )
+                  : [...prev.modified, updatedRow],
+              };
+            });
           }
           onChangeRef.current?.(newData, changesRef.current);
           setEditingKey(null);
@@ -647,7 +296,7 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
         setData([...dataRef.current]);
       },
     }),
-    [columns, rowKey, defaultRowData, generateKey, getRowKeyValue],
+    [columns, rowKey, defaultRowData, generateKey, getRowKeyValue, updateChanges],
   );
 
   useImperativeHandle(ref, () => tableInstance, [tableInstance]);
@@ -824,7 +473,7 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
 
           if (isEditing && editMode === "row") {
             return (
-              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+              <div className="easy-table-actions">
                 <Button type="primary" size="small" onClick={handleSave}>
                   保存
                 </Button>
@@ -836,7 +485,7 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
           }
 
           return (
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            <div className="easy-table-actions">
               {actions.map((action) => {
                 const {
                   key: actionKey,
@@ -931,7 +580,7 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
     if (!showAddButton && !showDeleteButton && !renderToolbar) return null;
 
     return (
-      <div style={{ marginBottom: 16, display: "flex", gap: 8, alignItems: "center" }}>
+      <div className="easy-table-toolbar">
         {showAddButton && (
           <Button type="primary" onClick={handleAdd}>
             {addButtonText}
@@ -959,7 +608,6 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
 
   return (
     <div className={className} style={style}>
-      {/* eslint-disable-next-line react-hooks/refs -- renderToolbarContent reads tableInstance (stable memo with ref-based methods) */}
       {renderToolbarContent()}
       <Table
         rowKey={rowKey}
@@ -985,7 +633,6 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
         pagination={false}
       />
       {pagination !== false && <PaginationBar pagination={pagination} dataLength={data.length} />}
-      {/* eslint-disable-next-line react-hooks/refs -- renderFooter receives tableInstance (stable memo with ref-based methods) */}
       {renderFooter?.(tableInstance)}
     </div>
   );
@@ -993,4 +640,17 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
 
 EasyTable.displayName = "EasyTable";
 
+export { EasyTable };
 export default EasyTable;
+export type {
+  ColumnSchema,
+  ActionSchema,
+  TableInstance,
+  EasyTableProps,
+  EditRenderProps,
+  TableOptionItem,
+  ColumnType,
+  EditableControl,
+  VisibleControl,
+  DisabledControl,
+} from "./types";
