@@ -1,6 +1,6 @@
 import { createBrowserRouter, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Suspense, lazy } from "react";
-import { Menu } from "@alifd/next";
+import { Menu } from "antd";
 
 const Home = lazy(() => import("../views/Home"));
 const About = lazy(() => import("../views/About"));
@@ -22,13 +22,11 @@ const Layout = () => {
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <Menu
         style={{ width: 200 }}
+        mode="inline"
         selectedKeys={[location.pathname]}
-        onItemClick={(key: string) => navigate(key)}
-      >
-        {menuItems.map((item) => (
-          <Menu.Item key={item.key}>{item.label}</Menu.Item>
-        ))}
-      </Menu>
+        onClick={({ key }) => navigate(key)}
+        items={menuItems}
+      />
       <div style={{ flex: 1, padding: "20px", overflow: "auto" }}>
         <Outlet />
       </div>

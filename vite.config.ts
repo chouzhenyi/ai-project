@@ -23,15 +23,6 @@ export default defineConfig({
       "@router": path.resolve(__dirname, "./src/router"),
     },
   },
-  css: {
-    lightningcss: {
-      errorRecovery: true,
-    },
-    preprocessorOptions: {
-      less: { javascriptEnabled: true },
-    },
-  },
-  optimizeDeps: { include: ["@alifd/next", "moment"] },
   build: {
     minify: "terser",
     terserOptions: {
@@ -42,17 +33,12 @@ export default defineConfig({
         manualChunks(id) {
           if (
             id.includes("node_modules") &&
-            (id.includes("react") ||
-              id.includes("react-dom") ||
-              id.includes("react-router"))
+            (id.includes("react") || id.includes("react-dom") || id.includes("react-router"))
           ) {
             return "react-vendor";
           }
-          if (
-            id.includes("node_modules") &&
-            id.includes("@alifd/next")
-          ) {
-            return "next-vendor";
+          if (id.includes("node_modules") && (id.includes("antd") || id.includes("@ant-design"))) {
+            return "antd-vendor";
           }
         },
       },

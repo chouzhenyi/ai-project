@@ -1,10 +1,10 @@
-import { Button } from "@alifd/next";
+import { Button } from "antd";
 
 const About = () => {
   return (
     <div>
       <h2>关于页面</h2>
-      <Button type="secondary">次要按钮</Button>
+      <Button>默认按钮</Button>
     </div>
   );
 };

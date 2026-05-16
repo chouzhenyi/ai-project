@@ -4,7 +4,7 @@ import EasyTable, {
   type ActionSchema,
   type TableInstance,
 } from "../components/EasyTable";
-import { Button, Card, Tab, Message, Tag } from "@alifd/next";
+import { Button, Card, Tabs, message, Tag } from "antd";
 
 // ============ 示例1: 基础表格 ============
 const BasicTableDemo = () => {
@@ -40,11 +40,11 @@ const ActionTableDemo = () => {
       width: 100,
       format: (value) => {
         const statusMap: Record<string, { color: string; text: string }> = {
-          active: { color: "green", text: "启用" },
-          inactive: { color: "red", text: "禁用" },
-          pending: { color: "orange", text: "待审核" },
+          active: { color: "success", text: "启用" },
+          inactive: { color: "error", text: "禁用" },
+          pending: { color: "warning", text: "待审核" },
         };
-        const status = statusMap[String(value)] || { color: "gray", text: "未知" };
+        const status = statusMap[String(value)] || { color: "default", text: "未知" };
         return <Tag color={status.color}>{status.text}</Tag>;
       },
     },
@@ -63,14 +63,14 @@ const ActionTableDemo = () => {
       text: "查看",
       type: "primary",
       onClick: (record) => {
-        Message.info(`查看: ${record.name}`);
+        message.info(`查看: ${record.name}`);
       },
     },
     {
       key: "edit",
       text: "编辑",
       onClick: (record) => {
-        Message.info(`编辑: ${record.name}`);
+        message.info(`编辑: ${record.name}`);
       },
     },
     {
@@ -80,7 +80,7 @@ const ActionTableDemo = () => {
       confirm: "确定要删除此记录吗？",
       onClick: (record) => {
         setData((prev) => prev.filter((item) => item.id !== record.id));
-        Message.success("删除成功");
+        message.success("删除成功");
       },
     },
   ];
@@ -124,10 +124,10 @@ const SelectionTableDemo = () => {
   const handleBatchDelete = () => {
     const selectedRows = tableRef.current?.getSelectedRows() || [];
     if (selectedRows.length === 0) {
-      Message.warning("请先选择数据");
+      message.warning("请先选择数据");
       return;
     }
-    Message.success(`批量删除 ${selectedRows.length} 条数据`);
+    message.success(`批量删除 ${selectedRows.length} 条数据`);
     tableRef.current?.setSelectedRows([]);
   };
 
@@ -140,7 +140,7 @@ const SelectionTableDemo = () => {
         showSelection
         onSelectionChange={handleSelectionChange}
         renderToolbar={() => (
-          <Button warning onClick={handleBatchDelete}>
+          <Button danger onClick={handleBatchDelete}>
             批量删除
           </Button>
         )}
@@ -264,7 +264,7 @@ const CrudTableDemo = () => {
         { label: "禁用", value: 0 },
       ],
       format: (value) => (
-        <Tag color={value === 1 ? "green" : "red"}>{value === 1 ? "启用" : "禁用"}</Tag>
+        <Tag color={value === 1 ? "success" : "error"}>{value === 1 ? "启用" : "禁用"}</Tag>
       ),
     },
     { key: "remark", title: "备注", dataIndex: "remark", type: "input", editable: true },
@@ -289,12 +289,12 @@ const CrudTableDemo = () => {
       status: 1,
       remark: "",
     });
-    Message.success("新增成功，请编辑数据");
+    message.success("新增成功，请编辑数据");
   };
 
   const handleDelete = (keys: (string | number)[]) => {
     tableRef.current?.deleteRows(keys);
-    Message.success(`删除 ${keys.length} 条数据`);
+    message.success(`删除 ${keys.length} 条数据`);
   };
 
   return (
@@ -322,7 +322,7 @@ const CrudTableDemo = () => {
           onClick={() => {
             const changes = tableRef.current?.getChanges();
             console.log("变更记录:", changes);
-            Message.success("请查看控制台输出");
+            message.success("请查看控制台输出");
           }}
         >
           查看变更记录
@@ -422,7 +422,7 @@ const FormatTableDemo = () => {
         return (
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             {tags?.map((tag) => (
-              <Tag key={tag} color="blue">
+              <Tag key={tag} color="processing">
                 {tag}
               </Tag>
             ))}
@@ -493,9 +493,9 @@ const PaginationTableDemo = () => {
       width: 100,
       format: (value) => {
         const map: Record<string, { color: string; text: string }> = {
-          active: { color: "green", text: "启用" },
-          inactive: { color: "red", text: "禁用" },
-          pending: { color: "orange", text: "待审核" },
+          active: { color: "success", text: "启用" },
+          inactive: { color: "error", text: "禁用" },
+          pending: { color: "warning", text: "待审核" },
         };
         const s = map[String(value)];
         return <Tag color={s.color}>{s.text}</Tag>;
@@ -645,7 +645,7 @@ const CompleteTableDemo = () => {
       text: "详情",
       type: "primary",
       onClick: (record) => {
-        Message.info(`查看详情: ${record.name}`);
+        message.info(`查看详情: ${record.name}`);
       },
     },
   ];
@@ -679,7 +679,7 @@ const CompleteTableDemo = () => {
           onClick={() => {
             const changes = tableRef.current?.getChanges();
             console.log("数据变更:", changes);
-            Message.success("请查看控制台");
+            message.success("请查看控制台");
           }}
         >
           查看变更
@@ -688,10 +688,10 @@ const CompleteTableDemo = () => {
           onClick={() => {
             tableRef.current?.validate().then(({ valid, errors }) => {
               if (valid) {
-                Message.success("验证通过");
+                message.success("验证通过");
               } else {
                 console.log("验证错误:", errors);
-                Message.error("存在验证错误，请查看控制台");
+                message.error("存在验证错误，请查看控制台");
               }
             });
           }}
@@ -701,7 +701,7 @@ const CompleteTableDemo = () => {
         <Button
           onClick={() => {
             console.log("当前数据:", tableRef.current?.getData());
-            Message.success("请查看控制台");
+            message.success("请查看控制台");
           }}
         >
           获取数据
@@ -743,13 +743,13 @@ const TableDemo = () => {
   return (
     <div style={{ padding: 24 }}>
       <h2 style={{ marginBottom: 24 }}>EasyTable 配置化表格示例</h2>
-      <Tab>
+      <Tabs>
         {items.map((item) => (
-          <Tab.Item key={item.key} title={item.tab}>
+          <Tabs.TabPane key={item.key} tab={item.tab}>
             <Card style={{ marginTop: 16 }}>{item.content}</Card>
-          </Tab.Item>
+          </Tabs.TabPane>
         ))}
-      </Tab>
+      </Tabs>
     </div>
   );
 };

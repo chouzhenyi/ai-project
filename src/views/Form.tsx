@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo } from "react";
 import EasyForm, { type FormSchema, type FormInstance } from "../components/EasyForm";
-import { Button, Card, Tab, Message } from "@alifd/next";
+import { Button, Card, Tabs, message } from "antd";
 
 // ============ 示例1: 基础表单 ============
 const BasicFormDemo = () => {
@@ -45,7 +45,7 @@ const BasicFormDemo = () => {
       schema={schema}
       onSubmit={(values) => {
         console.log("提交数据:", values);
-        Message.success("提交成功");
+        message.success("提交成功");
       }}
       columns={2}
     />
@@ -119,7 +119,7 @@ const LinkedFormDemo = () => {
       schema={schema}
       onSubmit={(values) => {
         console.log("提交数据:", values);
-        Message.success("提交成功");
+        message.success("提交成功");
       }}
       columns={2}
     />
@@ -194,7 +194,7 @@ const AsyncOptionsDemo = () => {
       schema={schema}
       onSubmit={(values) => {
         console.log("提交数据:", values);
-        Message.success("提交成功");
+        message.success("提交成功");
       }}
       columns={3}
     />
@@ -255,7 +255,7 @@ const ValidationDemo = () => {
       schema={schema}
       onSubmit={(values) => {
         console.log("提交数据:", values);
-        Message.success("验证通过，提交成功");
+        message.success("验证通过，提交成功");
       }}
       columns={2}
     />
@@ -293,9 +293,9 @@ const RefControlDemo = () => {
   const handleValidate = async () => {
     const result = await formRef.current?.validate();
     if (result?.valid) {
-      Message.success("验证通过");
+      message.success("验证通过");
     } else {
-      Message.error("验证失败，请检查表单");
+      message.error("验证失败，请检查表单");
     }
   };
 
@@ -319,7 +319,7 @@ const RefControlDemo = () => {
         <Button onClick={handleValidate}>验证表单</Button>
         <Button onClick={handleGetValues}>获取数据</Button>
         <Button onClick={handleReset}>重置</Button>
-        <Button type="secondary" onClick={() => formRef.current?.submit()}>
+        <Button type="default" onClick={() => formRef.current?.submit()}>
           提交
         </Button>
       </div>
@@ -328,7 +328,7 @@ const RefControlDemo = () => {
         schema={schema}
         onSubmit={(values) => {
           console.log("提交:", values);
-          Message.success("提交成功");
+          message.success("提交成功");
         }}
         onChange={(values) => setFormValues(values)}
         showActions={false}
@@ -374,7 +374,7 @@ const CustomComponentDemo = () => {
             {tags.map((tag) => (
               <Button
                 key={tag}
-                type={selected.includes(tag) ? "primary" : "normal"}
+                type={selected.includes(tag) ? "primary" : "default"}
                 onClick={() => {
                   if (selected.includes(tag)) {
                     onChange(selected.filter((t) => t !== tag));
@@ -420,7 +420,7 @@ const CustomComponentDemo = () => {
       schema={schema}
       onSubmit={(values) => {
         console.log("提交数据:", values);
-        Message.success("提交成功");
+        message.success("提交成功");
       }}
     />
   );
@@ -515,7 +515,7 @@ const SelectInfiniteDemo = () => {
         schema={schema}
         onSubmit={(values) => {
           console.log("提交数据:", values);
-          Message.success("提交成功");
+          message.success("提交成功");
         }}
         columns={2}
       />
@@ -672,7 +672,7 @@ const CompleteFormDemo = () => {
         schema={schema}
         onSubmit={(values) => {
           console.log("提交数据:", values);
-          Message.success("提交成功");
+          message.success("提交成功");
         }}
         showActions={false}
         columns={3}
@@ -729,7 +729,7 @@ const DisabledDemo = () => {
       disabled
       onSubmit={(values) => {
         console.log("提交数据:", values);
-        Message.success("提交成功");
+        message.success("提交成功");
       }}
       columns={3}
     />
@@ -790,7 +790,7 @@ const LinkedDisabledDemo = () => {
         schema={schema}
         onSubmit={(values) => {
           console.log("提交数据:", values);
-          Message.success("提交成功");
+          message.success("提交成功");
         }}
         columns={3}
       />
@@ -873,7 +873,7 @@ const SelectExtraDemo = () => {
         schema={schema}
         onSubmit={(values) => {
           console.log("提交数据:", values);
-          Message.success("提交成功");
+          message.success("提交成功");
         }}
         columns={2}
       />
@@ -900,13 +900,13 @@ const FormDemo = () => {
   return (
     <div style={{ padding: 24 }}>
       <h2 style={{ marginBottom: 24 }}>EasyForm 配置化表单示例</h2>
-      <Tab>
+      <Tabs>
         {items.map((item) => (
-          <Tab.Item key={item.key} title={item.tab}>
+          <Tabs.TabPane key={item.key} tab={item.tab}>
             <Card style={{ marginTop: 16 }}>{item.content}</Card>
-          </Tab.Item>
+          </Tabs.TabPane>
         ))}
-      </Tab>
+      </Tabs>
     </div>
   );
 };
