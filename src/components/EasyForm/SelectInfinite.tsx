@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Select } from "antd";
 import type { SelectInfiniteProps, OptionItem } from "./types";
+import { useEasyFormContext } from "./index";
 import "./styles.css";
 
 const SelectInfinite: React.FC<SelectInfiniteProps> = ({
@@ -9,9 +10,8 @@ const SelectInfinite: React.FC<SelectInfiniteProps> = ({
   disabled,
   placeholder,
   paginationOptions,
-  formValues,
-  formActions,
 }) => {
+  const { formValues, formActions } = useEasyFormContext();
   const [options, setOptions] = useState<OptionItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -19,6 +19,14 @@ const SelectInfinite: React.FC<SelectInfiniteProps> = ({
   const [keyword, setKeyword] = useState("");
   const pageSize = 20;
   const loadingRef = useRef(false);
+
+  // 使用 ref 持有最新引用，避免 formValues/formActions 变化导致 loadOptions 重建和 useEffect 重触发
+  const formValuesRef = useRef(formValues);
+  const formActionsRef = useRef(formActions);
+  useEffect(() => {
+    formValuesRef.current = formValues;
+    formActionsRef.current = formActions;
+  }, [formValues, formActions]);
 
   const loadOptions = useCallback(
     async (pageNum: number, searchKeyword: string, append = true) => {
@@ -30,8 +38,8 @@ const SelectInfinite: React.FC<SelectInfiniteProps> = ({
       try {
         const result = await paginationOptions(
           { page: pageNum, pageSize, keyword: searchKeyword },
-          formValues,
-          formActions,
+          formValuesRef.current,
+          formActionsRef.current,
         );
 
         if (append) {
@@ -40,14 +48,14 @@ const SelectInfinite: React.FC<SelectInfiniteProps> = ({
           setOptions(result.options);
         }
         setHasMore(result.hasMore);
-      } catch (e) {
-        console.error("Failed to load options:", e);
+      } catch {
+        // 静默处理，保留现有选项
       } finally {
         setLoading(false);
         loadingRef.current = false;
       }
     },
-    [paginationOptions, formValues, formActions],
+    [paginationOptions],
   );
 
   useEffect(() => {

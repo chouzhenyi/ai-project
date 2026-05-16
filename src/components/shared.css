@@ -1,0 +1,4 @@
+/* 共享样式：EasyForm 和 EasyTable 的编辑单元格共用 */
+.easy-shared-full-width {
+  width: 100%;
+}

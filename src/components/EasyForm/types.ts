@@ -164,8 +164,6 @@ export interface SelectInfiniteProps {
   disabled?: boolean;
   placeholder?: string;
   paginationOptions?: PaginationOptionsLoader;
-  formValues: Record<string, unknown>;
-  formActions: FormInstance;
 }
 
 export interface FieldProps {
@@ -175,7 +173,5 @@ export interface FieldProps {
   disabled: boolean;
   readonly: boolean;
   options: OptionItem[];
-  formValues: Record<string, unknown>;
-  formActions: FormInstance;
   onChange: (name: string, value: unknown) => void;
 }

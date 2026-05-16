@@ -6,12 +6,31 @@ import {
   useImperativeHandle,
   forwardRef,
   useMemo,
+  createContext,
+  useContext,
 } from "react";
 import { Form, Row, Col, Button, message } from "antd";
 import type { FormSchema, FormInstance, EasyFormProps, OptionItem } from "./types";
 import { getNestedValue, setNestedValue, executeValidation, isEmptyValue } from "./utils";
 import Field from "./Field";
 import "./styles.css";
+
+// ============ Context：消除 formValues/formActions 逐层穿透 ============
+
+interface FormContextValue {
+  formValues: Record<string, unknown>;
+  formActions: FormInstance;
+}
+
+const formContext = createContext<FormContextValue | null>(null);
+
+export const useEasyFormContext = () => {
+  const ctx = useContext(formContext);
+  if (!ctx) throw new Error("useEasyFormContext must be used within EasyForm");
+  return ctx;
+};
+
+// ============ 主组件 ============
 
 const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
   const {
@@ -110,9 +129,11 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
         setFieldOptions((prev) => ({ ...prev, [name]: options }));
       },
       submit: () => {
-        formActionsRef.current?.validate().then(({ valid, values }) => {
-          if (valid) {
-            onSubmit?.(values, formActionsRef.current!);
+        const actions = formActionsRef.current;
+        if (!actions) return;
+        actions.validate().then(({ valid, values: vals }) => {
+          if (valid && formActionsRef.current) {
+            onSubmit?.(vals, formActionsRef.current);
           }
         });
       },
@@ -129,13 +150,13 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
   useEffect(() => {
     const init = async () => {
       const newOptions: Record<string, OptionItem[]> = {};
+      const actions = formActionsRef.current;
 
       for (const item of schema) {
         if (typeof item.options === "function") {
           try {
-            newOptions[item.name] = await item.options(valuesRef.current, formActionsRef.current!);
-          } catch (e) {
-            console.error(`Failed to load options for ${item.name}:`, e);
+            newOptions[item.name] = await item.options(valuesRef.current, actions ?? formActions);
+          } catch {
             newOptions[item.name] = [];
           }
         }
@@ -145,7 +166,14 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
     };
 
     init();
-  }, [schema, initialValues]);
+  }, [schema, initialValues, formActions]);
+
+  /** 预构建 schema Map：O(1) 查找替代 schema.find() 的 O(n) 线性扫描 */
+  const schemaMap = useMemo(() => {
+    const map = new Map<string, FormSchema>();
+    schema.forEach((item) => map.set(item.name, item));
+    return map;
+  }, [schema]);
 
   const handleFieldChange = useCallback(
     (name: string, value: unknown) => {
@@ -161,7 +189,7 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
 
       onChange?.(next, formActions);
 
-      const fieldSchema = schema.find((s) => s.name === name);
+      const fieldSchema = schemaMap.get(name);
       if (fieldSchema?.onChange) {
         fieldSchema.onChange(value, next, formActions);
       }
@@ -169,7 +197,7 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
         fieldSchema.effect(value, next, formActions);
       }
     },
-    [schema, onChange, formActions],
+    [schemaMap, onChange, formActions],
   );
 
   const handleSubmit = useCallback(async () => {
@@ -198,22 +226,27 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
     [fieldOptions],
   );
 
-  // formActionsRef 始终持有最新引用，作为 visible/disabled 回调参数传入
-  // 这样 fieldStates 仅依赖 schema + values，不因 formActions 引用变化而重建
+  /* eslint-disable react-hooks/refs -- formActions methods read refs internally but only in callbacks, not during render */
   const fieldStates = useMemo(
     () =>
-      schema.map((item) => ({
-        item,
-        isVisible:
-          typeof item.visible === "function"
-            ? item.visible(values, formActionsRef.current!)
-            : item.visible !== false,
-        isDisabled:
-          typeof item.disabled === "function"
-            ? item.disabled(values, formActionsRef.current!)
-            : item.disabled === true,
-      })),
-    [schema, values],
+      schema.map((item) => {
+        const visible = item.visible;
+        const disabled = item.disabled;
+        return {
+          item,
+          isVisible:
+            typeof visible === "function" ? visible(values, formActions) : visible !== false,
+          isDisabled:
+            typeof disabled === "function" ? disabled(values, formActions) : disabled === true,
+        };
+      }),
+    [schema, values, formActions],
+  );
+  /* eslint-enable react-hooks/refs */
+
+  const contextValue = useMemo<FormContextValue>(
+    () => ({ formValues: values, formActions }),
+    [values, formActions],
   );
 
   const renderFields = useMemo(() => {
@@ -248,8 +281,6 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
               disabled={formDisabled || fs.isDisabled}
               readonly={formReadonly}
               options={options}
-              formValues={values}
-              formActions={formActions}
               onChange={handleFieldChange}
             />
           </Form.Item>
@@ -289,8 +320,6 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
                   disabled={formDisabled || fs.isDisabled}
                   readonly={formReadonly}
                   options={options}
-                  formValues={values}
-                  formActions={formActions}
                   onChange={handleFieldChange}
                 />
               </Form.Item>
@@ -307,7 +336,6 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
     inline,
     columns,
     values,
-    formActions,
     handleFieldChange,
     getFieldOptions,
     labelAlign,
@@ -335,16 +363,19 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
   };
 
   return (
-    <Form
-      style={style}
-      labelCol={labelCol}
-      wrapperCol={wrapperCol}
-      labelAlign={labelAlign === "top" ? "left" : labelAlign === "inset" ? "left" : labelAlign}
-      layout={inline ? "inline" : "horizontal"}
-    >
-      {renderFields}
-      {renderActionButtons()}
-    </Form>
+    <formContext.Provider value={contextValue}>
+      <Form
+        style={style}
+        labelCol={labelCol}
+        wrapperCol={wrapperCol}
+        labelAlign={labelAlign === "top" ? "left" : labelAlign === "inset" ? "left" : labelAlign}
+        layout={inline ? "inline" : "horizontal"}
+      >
+        {renderFields}
+        {/* eslint-disable-next-line react-hooks/refs -- renderActionButtons reads formActions from stable memo, not ref */}
+        {renderActionButtons()}
+      </Form>
+    </formContext.Provider>
   );
 });
 

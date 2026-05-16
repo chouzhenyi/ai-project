@@ -13,8 +13,10 @@ import {
   TreeSelect,
   Cascader,
 } from "antd";
+import type { DefaultOptionType } from "antd/es/select";
 import dayjs from "dayjs";
 import type { FieldProps, OptionItem } from "./types";
+import { useEasyFormContext } from "./index";
 import SelectInfinite from "./SelectInfinite";
 import "./styles.css";
 
@@ -25,10 +27,9 @@ const Field: React.FC<FieldProps> = ({
   disabled,
   readonly,
   options,
-  formValues,
-  formActions,
   onChange,
 }) => {
+  const { formValues, formActions } = useEasyFormContext();
   const {
     component = "Input",
     name,
@@ -121,7 +122,7 @@ const Field: React.FC<FieldProps> = ({
           }}
           disabled={disabled}
           placeholder={placeholder}
-          options={options}
+          options={options as DefaultOptionType[]}
           optionRender={
             schema.optionRender ? (opt) => schema.optionRender!(opt.data as OptionItem) : undefined
           }
@@ -139,8 +140,6 @@ const Field: React.FC<FieldProps> = ({
           disabled={disabled}
           placeholder={placeholder}
           paginationOptions={paginationOptions}
-          formValues={formValues}
-          formActions={formActions}
         />
       );
 
@@ -151,7 +150,7 @@ const Field: React.FC<FieldProps> = ({
           value={value as string | number}
           onChange={(val) => handleChange(val)}
           placeholder={placeholder}
-          treeData={options as never}
+          treeData={options as React.ComponentProps<typeof TreeSelect>["treeData"]}
           disabled={disabled}
           {...componentProps}
         />
@@ -164,7 +163,7 @@ const Field: React.FC<FieldProps> = ({
           value={value as (string | number)[]}
           onChange={(val) => handleChange(val)}
           placeholder={placeholder}
-          options={options as never}
+          options={options as React.ComponentProps<typeof Cascader>["options"]}
           disabled={disabled}
           {...componentProps}
         />
@@ -286,7 +285,7 @@ const Field: React.FC<FieldProps> = ({
     case "Upload":
       return (
         <Upload
-          fileList={(value as never) ?? []}
+          fileList={(value as React.ComponentProps<typeof Upload>["fileList"]) ?? []}
           onChange={(info) => handleChange(info.fileList)}
           disabled={disabled}
           {...componentProps}

@@ -17,6 +17,7 @@ export const setNestedValue = (
   path: string,
   value: unknown,
 ): Record<string, unknown> => {
+  if (!path) return obj;
   const keys = path.split(".");
   const result = { ...obj };
   let current: Record<string, unknown> = result;

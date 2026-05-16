@@ -2,7 +2,7 @@ import React from "react";
 import { Input, Select, InputNumber, DatePicker, Switch, Checkbox, Radio } from "antd";
 import dayjs from "dayjs";
 import type { EditCellProps, TableOptionItem } from "./types";
-import "../EasyForm/styles.css";
+import "../shared.css";
 
 const EditCell: React.FC<EditCellProps> = ({
   column,
@@ -63,7 +63,7 @@ const EditCell: React.FC<EditCellProps> = ({
           onChange={(e) => onValueChange(e.target.value)}
           disabled={disabled}
           placeholder={placeholder}
-          className="easy-form-full-width"
+          className="easy-shared-full-width"
           {...componentProps}
         />
       );
@@ -78,7 +78,7 @@ const EditCell: React.FC<EditCellProps> = ({
           min={min}
           max={max}
           precision={precision}
-          className="easy-form-full-width"
+          className="easy-shared-full-width"
           {...componentProps}
         />
       );
@@ -91,7 +91,7 @@ const EditCell: React.FC<EditCellProps> = ({
           disabled={disabled}
           placeholder={placeholder}
           options={getOptions()}
-          className="easy-form-full-width"
+          className="easy-shared-full-width"
           {...componentProps}
         />
       );
@@ -106,7 +106,7 @@ const EditCell: React.FC<EditCellProps> = ({
           disabled={disabled}
           placeholder={placeholder}
           format={dateFormat}
-          className="easy-form-full-width"
+          className="easy-shared-full-width"
           {...componentProps}
         />
       );
