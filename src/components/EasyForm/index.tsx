@@ -32,10 +32,12 @@ export const useEasyFormContext = () => {
 
 // ============ 主组件 ============
 
+const EMPTY_INITIAL_VALUES: Record<string, unknown> = {};
+
 const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
   const {
     schema,
-    initialValues = {},
+    initialValues = EMPTY_INITIAL_VALUES,
     onSubmit,
     onChange,
     onReset,
@@ -72,6 +74,19 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
   }, [values]);
 
   const formActionsRef = useRef<FormInstance | null>(null);
+  const onSubmitRef = useRef(onSubmit);
+  const onChangeRef = useRef(onChange);
+  const onResetRef = useRef(onReset);
+
+  useEffect(() => {
+    onSubmitRef.current = onSubmit;
+  }, [onSubmit]);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+  useEffect(() => {
+    onResetRef.current = onReset;
+  }, [onReset]);
 
   const formActions: FormInstance = useMemo(
     () => ({
@@ -133,12 +148,12 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
         if (!actions) return;
         actions.validate().then(({ valid, values: vals }) => {
           if (valid && formActionsRef.current) {
-            onSubmit?.(vals, formActionsRef.current);
+            onSubmitRef.current?.(vals, formActionsRef.current);
           }
         });
       },
     }),
-    [schema, initialValues, onSubmit],
+    [schema, initialValues],
   );
 
   useEffect(() => {
@@ -187,7 +202,7 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
         return err;
       });
 
-      onChange?.(next, formActions);
+      onChangeRef.current?.(next, formActions);
 
       const fieldSchema = schemaMap.get(name);
       if (fieldSchema?.onChange) {
@@ -197,24 +212,24 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
         fieldSchema.effect(value, next, formActions);
       }
     },
-    [schemaMap, onChange, formActions],
+    [schemaMap, formActions],
   );
 
   const handleSubmit = useCallback(async () => {
     const { valid, values: formValues } = await formActions.validate();
     if (valid) {
       try {
-        await onSubmit?.(formValues, formActions);
+        await onSubmitRef.current?.(formValues, formActions);
       } catch (e) {
         message.error(e instanceof Error ? e.message : "提交失败");
       }
     }
-  }, [onSubmit, formActions]);
+  }, [formActions]);
 
   const handleReset = useCallback(() => {
     formActions.reset();
-    onReset?.({}, formActions);
-  }, [formActions, onReset]);
+    onResetRef.current?.({}, formActions);
+  }, [formActions]);
 
   const getFieldOptions = useCallback(
     (item: FormSchema): OptionItem[] => {
@@ -226,7 +241,8 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
     [fieldOptions],
   );
 
-  /* eslint-disable react-hooks/refs -- formActions methods read refs internally but only in callbacks, not during render */
+  /* eslint-disable react-hooks/refs -- formActions is passed to visible/disabled callbacks which may call getValues() internally;
+     this is safe because formActions reads refs only in event-handler-like callbacks, not during the synchronous render path */
   const fieldStates = useMemo(
     () =>
       schema.map((item) => {
@@ -372,7 +388,7 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
         layout={inline ? "inline" : "horizontal"}
       >
         {renderFields}
-        {/* eslint-disable-next-line react-hooks/refs -- renderActionButtons reads formActions from stable memo, not ref */}
+        {/* eslint-disable-next-line react-hooks/refs -- renderActionButtons reads formActions which internally accesses refs only in callbacks */}
         {renderActionButtons()}
       </Form>
     </formContext.Provider>

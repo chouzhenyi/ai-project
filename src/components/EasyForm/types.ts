@@ -164,6 +164,7 @@ export interface SelectInfiniteProps {
   disabled?: boolean;
   placeholder?: string;
   paginationOptions?: PaginationOptionsLoader;
+  pageSize?: number;
 }
 
 export interface FieldProps {

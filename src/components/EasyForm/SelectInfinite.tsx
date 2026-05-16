@@ -10,6 +10,7 @@ const SelectInfinite: React.FC<SelectInfiniteProps> = ({
   disabled,
   placeholder,
   paginationOptions,
+  pageSize = 20,
 }) => {
   const { formValues, formActions } = useEasyFormContext();
   const [options, setOptions] = useState<OptionItem[]>([]);
@@ -17,7 +18,6 @@ const SelectInfinite: React.FC<SelectInfiniteProps> = ({
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
-  const pageSize = 20;
   const loadingRef = useRef(false);
 
   // 使用 ref 持有最新引用，避免 formValues/formActions 变化导致 loadOptions 重建和 useEffect 重触发
@@ -55,7 +55,7 @@ const SelectInfinite: React.FC<SelectInfiniteProps> = ({
         loadingRef.current = false;
       }
     },
-    [paginationOptions],
+    [paginationOptions, pageSize],
   );
 
   useEffect(() => {
@@ -78,7 +78,7 @@ const SelectInfinite: React.FC<SelectInfiniteProps> = ({
   );
 
   const handleScrollToBottom = useCallback(() => {
-    if (hasMore && !loading) {
+    if (hasMore && !loading && !loadingRef.current) {
       const nextPage = page + 1;
       setPage(nextPage);
       loadOptions(nextPage, keyword);

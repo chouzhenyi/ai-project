@@ -7,25 +7,27 @@ interface ChangeTracker {
   removed: Record<string, unknown>[];
 }
 
-export function useTableInstance(
-  columns: ColumnSchema[],
-  externalData: Record<string, unknown>[] | undefined,
-  rowKey: string,
-  defaultRowData: Record<string, unknown>,
-  onChange:
-    | ((
-        data: Record<string, unknown>[],
-        changes: {
-          added: Record<string, unknown>[];
-          modified: Record<string, unknown>[];
-          removed: Record<string, unknown>[];
-        },
-      ) => void)
-    | undefined,
-  onSelectionChange:
-    | ((selectedKeys: (string | number)[], selectedRows: Record<string, unknown>[]) => void)
-    | undefined,
-) {
+interface UseTableInstanceOptions {
+  columns: ColumnSchema[];
+  externalData?: Record<string, unknown>[];
+  rowKey: string;
+  defaultRowData: Record<string, unknown>;
+  onChange?: (
+    data: Record<string, unknown>[],
+    changes: {
+      added: Record<string, unknown>[];
+      modified: Record<string, unknown>[];
+      removed: Record<string, unknown>[];
+    },
+  ) => void;
+  onSelectionChange?: (
+    selectedKeys: (string | number)[],
+    selectedRows: Record<string, unknown>[],
+  ) => void;
+}
+
+export function useTableInstance(options: UseTableInstanceOptions) {
+  const { columns, externalData, rowKey, defaultRowData, onChange, onSelectionChange } = options;
   const [data, setData] = useState<Record<string, unknown>[]>(externalData || []);
   const [selectedKeys, setSelectedKeys] = useState<(string | number)[]>([]);
   const [editingKey, setEditingKey] = useState<string | number | null>(null);
@@ -48,6 +50,11 @@ export function useTableInstance(
   const errorsRef = useRef(errors);
   const onChangeRef = useRef(onChange);
   const onSelectionChangeRef = useRef(onSelectionChange);
+  const columnsRef = useRef(columns);
+
+  useEffect(() => {
+    columnsRef.current = columns;
+  }, [columns]);
 
   useEffect(() => {
     dataRef.current = data;
@@ -96,11 +103,14 @@ export function useTableInstance(
       setData: (newData) => {
         setData(newData);
       },
-      getSelectedRows: () =>
-        dataRef.current.filter((item) => selectedKeysRef.current.includes(getRowKeyValue(item))),
+      getSelectedRows: () => {
+        const keySet = new Set(selectedKeysRef.current);
+        return dataRef.current.filter((item) => keySet.has(getRowKeyValue(item)));
+      },
       setSelectedRows: (keys) => {
         setSelectedKeys(keys);
-        const rows = dataRef.current.filter((item) => keys.includes(getRowKeyValue(item)));
+        const keySet = new Set(keys);
+        const rows = dataRef.current.filter((item) => keySet.has(getRowKeyValue(item)));
         onSelectionChangeRef.current?.(keys, rows);
       },
       addRow: (row = {}, index) => {
@@ -228,7 +238,7 @@ export function useTableInstance(
 
             const rowErrors = (
               await Promise.all(
-                columns
+                columnsRef.current
                   .filter((col) => col.validator)
                   .map(async (col) => {
                     const value = record[col.dataIndex];
@@ -263,7 +273,7 @@ export function useTableInstance(
         setData([...dataRef.current]);
       },
     }),
-    [columns, rowKey, defaultRowData, generateKey, getRowKeyValue, updateChanges],
+    [rowKey, defaultRowData, generateKey, getRowKeyValue, updateChanges],
   );
 
   return {
@@ -274,7 +284,7 @@ export function useTableInstance(
     errors,
     tableInstance,
     getRowKeyValue,
-    editingKeyRef,
     editDataRef,
+    setEditData,
   };
 }

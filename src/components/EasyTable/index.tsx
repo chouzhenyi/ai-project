@@ -44,8 +44,23 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
     renderFooter,
   } = props;
 
-  const { data, selectedKeys, editingKey, editData, tableInstance, getRowKeyValue, editDataRef } =
-    useTableInstance(columns, externalData, rowKey, defaultRowData, onChange, onSelectionChange);
+  const {
+    data,
+    selectedKeys,
+    editingKey,
+    editData,
+    tableInstance,
+    getRowKeyValue,
+    editDataRef,
+    setEditData,
+  } = useTableInstance({
+    columns,
+    externalData,
+    rowKey,
+    defaultRowData,
+    onChange,
+    onSelectionChange,
+  });
 
   useImperativeHandle(ref, () => tableInstance, [tableInstance]);
 
@@ -61,10 +76,9 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
 
   const handleCellChange = useCallback(
     (column: ColumnSchema, value: unknown) => {
-      const newEditData = { ...editData, [column.dataIndex]: value };
-      tableInstance.startEdit(editingKey!);
-      // 恢复 editData 到当前值并更新字段
+      const newEditData = { ...editDataRef.current, [column.dataIndex]: value };
       editDataRef.current = newEditData;
+      setEditData(newEditData);
 
       if (column.onChange) {
         const rowIndex = data.findIndex((item) => getRowKeyValue(item) === editingKey);
@@ -73,7 +87,7 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
         }
       }
     },
-    [editData, data, editingKey, getRowKeyValue, tableInstance, editDataRef],
+    [data, editingKey, getRowKeyValue, editDataRef, setEditData],
   );
 
   const handleAdd = useCallback(() => {
@@ -119,6 +133,7 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
   const tableColumns = useMemo(() => {
     const cols: Record<string, unknown>[] = [];
 
+    // ── 序号列 ──
     if (showIndex) {
       cols.push({
         key: "__index__",
@@ -134,6 +149,7 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
       });
     }
 
+    // ── 数据列 ──
     columns.forEach((col) => {
       const {
         key,
@@ -211,6 +227,7 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
       });
     });
 
+    // ── 操作列 ──
     if (showActions && actions.length > 0) {
       cols.push({
         key: "__actions__",
