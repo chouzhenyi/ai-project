@@ -362,7 +362,7 @@ const SelectInfinite: React.FC<SelectInfiniteProps> = ({
   onChange,
   disabled,
   placeholder,
-  error,
+  error: _error,
   paginationOptions,
   formValues,
   formActions,
@@ -503,7 +503,22 @@ const Field: React.FC<FieldProps> = ({
   formActions,
   onChange,
 }) => {
-  const { component = "Input", name, render, placeholder, paginationOptions } = schema;
+  const {
+    component = "Input",
+    name,
+    render,
+    placeholder,
+    paginationOptions,
+    componentProps: rawComponentProps,
+  } = schema;
+
+  // Resolve componentProps: static object or dynamic function
+  const componentProps = useMemo(() => {
+    if (typeof rawComponentProps === "function") {
+      return rawComponentProps(formValues, formActions) as Record<string, unknown>;
+    }
+    return rawComponentProps || {};
+  }, [rawComponentProps, formValues, formActions]);
 
   const handleChange = useCallback(
     (newValue: unknown) => {
@@ -542,6 +557,7 @@ const Field: React.FC<FieldProps> = ({
           onChange={handleChange}
           disabled={disabled}
           placeholder={placeholder}
+          {...componentProps}
         />
       );
 
@@ -553,6 +569,7 @@ const Field: React.FC<FieldProps> = ({
           onChange={handleChange}
           disabled={disabled}
           placeholder={placeholder}
+          {...componentProps}
         />
       );
 
@@ -564,6 +581,7 @@ const Field: React.FC<FieldProps> = ({
           onChange={handleChange}
           disabled={disabled}
           placeholder={placeholder}
+          {...componentProps}
         />
       );
 
@@ -596,6 +614,7 @@ const Field: React.FC<FieldProps> = ({
           }
           showSearch
           filterLocal
+          {...componentProps}
         />
       );
 
@@ -621,6 +640,7 @@ const Field: React.FC<FieldProps> = ({
           onChange={handleChange}
           placeholder={placeholder}
           dataSource={options as never[]}
+          {...componentProps}
         />
       );
 
@@ -632,6 +652,7 @@ const Field: React.FC<FieldProps> = ({
           onChange={handleChange}
           placeholder={placeholder}
           dataSource={options as never[]}
+          {...componentProps}
         />
       );
 
@@ -654,6 +675,7 @@ const Field: React.FC<FieldProps> = ({
           disabled={disabled}
           placeholder={placeholder}
           format={schema.dateFormat || "YYYY-MM-DD"}
+          {...componentProps}
         />
       );
 
@@ -678,6 +700,7 @@ const Field: React.FC<FieldProps> = ({
           disabled={disabled}
           placeholder={placeholder}
           format={schema.dateFormat || "YYYY-MM-DD"}
+          {...componentProps}
         />
       );
 
@@ -689,6 +712,7 @@ const Field: React.FC<FieldProps> = ({
           onChange={handleChange}
           disabled={disabled}
           placeholder={placeholder}
+          {...componentProps}
         />
       );
 
@@ -700,11 +724,19 @@ const Field: React.FC<FieldProps> = ({
           onChange={handleChange}
           disabled={disabled}
           placeholder={placeholder}
+          {...componentProps}
         />
       );
 
     case "Switch":
-      return <Switch checked={Boolean(value)} onChange={handleChange} disabled={disabled} />;
+      return (
+        <Switch
+          checked={Boolean(value)}
+          onChange={handleChange}
+          disabled={disabled}
+          {...componentProps}
+        />
+      );
 
     case "Checkbox":
       return (
@@ -713,6 +745,7 @@ const Field: React.FC<FieldProps> = ({
           value={value as (string | number)[]}
           onChange={handleChange}
           disabled={disabled}
+          {...componentProps}
         >
           {options.map((opt) => (
             <Checkbox key={String(opt.value)} value={opt.value} disabled={opt.disabled}>
@@ -729,6 +762,7 @@ const Field: React.FC<FieldProps> = ({
           value={value as string | number}
           onChange={handleChange}
           disabled={disabled}
+          {...componentProps}
         >
           {options.map((opt) => (
             <Radio key={String(opt.value)} value={opt.value} disabled={opt.disabled}>
@@ -739,7 +773,14 @@ const Field: React.FC<FieldProps> = ({
       );
 
     case "Rating":
-      return <Rating value={value as number} onChange={handleChange} disabled={disabled} />;
+      return (
+        <Rating
+          value={value as number}
+          onChange={handleChange}
+          disabled={disabled}
+          {...componentProps}
+        />
+      );
 
     case "Upload":
       return (
@@ -749,6 +790,7 @@ const Field: React.FC<FieldProps> = ({
           onChange={handleChange}
           disabled={disabled}
           listType="text"
+          {...componentProps}
         />
       );
 
@@ -760,6 +802,7 @@ const Field: React.FC<FieldProps> = ({
           onChange={handleChange}
           disabled={disabled}
           placeholder={placeholder}
+          {...componentProps}
         />
       );
   }
@@ -912,7 +955,7 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
     };
 
     init();
-  }, [schema]);
+  }, [schema, initialValues]);
 
   // 字段值变化处理
   const handleFieldChange = useCallback(
@@ -970,18 +1013,23 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
   );
 
   // 预计算字段可见性和禁用状态
-  // eslint-disable-next-line react-hooks/refs
-  const fieldStates = schema.map((item) => ({
-    item,
-    isVisible:
-      typeof item.visible === "function"
-        ? item.visible(values, formActions)
-        : item.visible !== false,
-    isDisabled:
-      typeof item.disabled === "function"
-        ? item.disabled(values, formActions)
-        : item.disabled === true,
-  }));
+  /* eslint-disable react-hooks/refs -- formActions is a stable memo, callbacks may read refs but only in event handlers */
+  const fieldStates = useMemo(
+    () =>
+      schema.map((item) => ({
+        item,
+        isVisible:
+          typeof item.visible === "function"
+            ? item.visible(values, formActions)
+            : item.visible !== false,
+        isDisabled:
+          typeof item.disabled === "function"
+            ? item.disabled(values, formActions)
+            : item.disabled === true,
+      })),
+    [schema, values, formActions],
+  );
+  /* eslint-enable react-hooks/refs */
 
   // 渲染字段
   const renderFields = useMemo(() => {
@@ -1144,10 +1192,8 @@ const EasyForm = forwardRef<FormInstance, EasyFormProps>((props, ref) => {
       inline={inline}
     >
       {renderFields}
-      {
-        // eslint-disable-next-line react-hooks/refs
-        renderActionButtons()
-      }
+      {/* eslint-disable-next-line react-hooks/refs -- renderActionButtons reads formActions (stable memo with ref-based methods) */}
+      {renderActionButtons()}
     </Form>
   );
 });

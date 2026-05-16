@@ -483,6 +483,101 @@ const EditCell: React.FC<EditCellProps> = ({
   }
 };
 
+// ============ 分页组件 ============
+
+interface PaginationBarProps {
+  pagination?: {
+    current?: number;
+    pageSize?: number;
+    total?: number;
+    onChange?: (current: number, pageSize: number) => void;
+  };
+  dataLength: number;
+}
+
+const PaginationBar: React.FC<PaginationBarProps> = ({ pagination, dataLength }) => {
+  const total = pagination?.total ?? dataLength;
+  const pageSize = pagination?.pageSize ?? 10;
+  const current = pagination?.current ?? 1;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const pageSizes = [10, 20, 50, 100];
+
+  const getPageNumbers = (): (number | "...")[] => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | "...")[] = [1];
+    if (current > 3) pages.push("...");
+    const start = Math.max(2, current - 1);
+    const end = Math.min(totalPages - 1, current + 1);
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    if (current < totalPages - 2) pages.push("...");
+    pages.push(totalPages);
+    return pages;
+  };
+
+  if (total <= pageSize && !pagination?.total) return null;
+
+  return (
+    <div
+      style={{
+        marginTop: 16,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 8,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ color: "#666", fontSize: 13 }}>共 {total} 条</span>
+        <Select
+          size="small"
+          value={pageSize}
+          onChange={(val: number) => pagination?.onChange?.(1, val)}
+          dataSource={pageSizes.map((s) => ({ label: `${s} 条/页`, value: s }))}
+          style={{ width: 110 }}
+        />
+      </div>
+      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+        <Button
+          size="small"
+          disabled={current <= 1}
+          onClick={() => pagination?.onChange?.(current - 1, pageSize)}
+        >
+          上一页
+        </Button>
+        {getPageNumbers().map((page, i) =>
+          page === "..." ? (
+            <span key={`ellipsis-${i}`} style={{ padding: "0 4px", color: "#999" }}>
+              ...
+            </span>
+          ) : (
+            <Button
+              key={page}
+              size="small"
+              type={page === current ? "primary" : "normal"}
+              onClick={() => pagination?.onChange?.(page, pageSize)}
+            >
+              {page}
+            </Button>
+          ),
+        )}
+        <Button
+          size="small"
+          disabled={current >= totalPages}
+          onClick={() => pagination?.onChange?.(current + 1, pageSize)}
+        >
+          下一页
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 // ============ 主表格组件 ============
 
 const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
@@ -545,6 +640,26 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
   const originalDataRef = useRef<Record<string, unknown>>({});
   const keyCounterRef = useRef(0);
 
+  // Refs for latest state, to keep tableInstance useMemo stable
+  const dataRef = useRef(data);
+  const selectedKeysRef = useRef(selectedKeys);
+  const editingKeyRef = useRef(editingKey);
+  const editDataRef = useRef(editData);
+  const errorsRef = useRef(errors);
+  const onChangeRef = useRef(onChange);
+  const onSelectionChangeRef = useRef(onSelectionChange);
+
+  // Sync refs with latest state/props after render
+  useEffect(() => {
+    dataRef.current = data;
+    selectedKeysRef.current = selectedKeys;
+    editingKeyRef.current = editingKey;
+    editDataRef.current = editData;
+    errorsRef.current = errors;
+    onChangeRef.current = onChange;
+    onSelectionChangeRef.current = onSelectionChange;
+  });
+
   // 同步外部数据
   useEffect(() => {
     if (externalData) {
@@ -566,32 +681,35 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
     [rowKey],
   );
 
-  // 表格实例方法
+  // 表格实例方法 — 通过 refs 读取最新状态，useMemo 只在 columns/rowKey 等变化时重建
   const tableInstance = useMemo<TableInstance>(
     () => ({
-      getData: () => data,
+      getData: () => dataRef.current,
       setData: (newData) => {
         setData(newData);
       },
-      getSelectedRows: () => data.filter((item) => selectedKeys.includes(getRowKeyValue(item))),
+      getSelectedRows: () =>
+        dataRef.current.filter((item) => selectedKeysRef.current.includes(getRowKeyValue(item))),
       setSelectedRows: (keys) => {
         setSelectedKeys(keys);
-        const rows = data.filter((item) => keys.includes(getRowKeyValue(item)));
-        onSelectionChange?.(keys, rows);
+        const rows = dataRef.current.filter((item) => keys.includes(getRowKeyValue(item)));
+        onSelectionChangeRef.current?.(keys, rows);
       },
       addRow: (row = {}, index) => {
         const newRow = { ...defaultRowData, ...row, [rowKey]: row[rowKey] || generateKey() };
+        const current = dataRef.current;
         const newData =
           index !== undefined
-            ? [...data.slice(0, index), newRow, ...data.slice(index)]
-            : [...data, newRow];
+            ? [...current.slice(0, index), newRow, ...current.slice(index)]
+            : [...current, newRow];
         setData(newData);
         changesRef.current.added.push(newRow);
-        onChange?.(newData, changesRef.current);
+        onChangeRef.current?.(newData, changesRef.current);
       },
       deleteRows: (keys) => {
-        const removedRows = data.filter((item) => keys.includes(getRowKeyValue(item)));
-        const newData = data.filter((item) => !keys.includes(getRowKeyValue(item)));
+        const current = dataRef.current;
+        const removedRows = current.filter((item) => keys.includes(getRowKeyValue(item)));
+        const newData = current.filter((item) => !keys.includes(getRowKeyValue(item)));
         setData(newData);
         setSelectedKeys([]);
         const trulyRemoved: Record<string, unknown>[] = [];
@@ -605,10 +723,11 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
           }
         }
         changesRef.current.removed.push(...trulyRemoved);
-        onChange?.(newData, changesRef.current);
+        onChangeRef.current?.(newData, changesRef.current);
       },
       updateRow: (key, rowData) => {
-        const newData = data.map((item) =>
+        const current = dataRef.current;
+        const newData = current.map((item) =>
           getRowKeyValue(item) === key ? { ...item, ...rowData } : item,
         );
         setData(newData);
@@ -623,14 +742,14 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
             changesRef.current.modified.push(updatedRow);
           }
         }
-        onChange?.(newData, changesRef.current);
+        onChangeRef.current?.(newData, changesRef.current);
       },
       getChanges: () => ({ ...changesRef.current }),
       clearChanges: () => {
         changesRef.current = { added: [], modified: [], removed: [] };
       },
       startEdit: (key) => {
-        const record = data.find((item) => getRowKeyValue(item) === key);
+        const record = dataRef.current.find((item) => getRowKeyValue(item) === key);
         if (record) {
           originalDataRef.current = { ...record };
           setEditingKey(key);
@@ -643,21 +762,20 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
         setErrors({});
       },
       saveEdit: () => {
-        if (Object.keys(errors).length > 0) {
+        if (Object.keys(errorsRef.current).length > 0) {
           return false;
         }
-        if (editingKey !== null) {
-          const newData = data.map((item) =>
-            getRowKeyValue(item) === editingKey ? { ...item, ...editData } : item,
+        const key = editingKeyRef.current;
+        if (key !== null) {
+          const current = dataRef.current;
+          const newData = current.map((item) =>
+            getRowKeyValue(item) === key ? { ...item, ...editDataRef.current } : item,
           );
           setData(newData);
-          const updatedRow = newData.find((item) => getRowKeyValue(item) === editingKey);
-          if (
-            updatedRow &&
-            !changesRef.current.added.find((r) => getRowKeyValue(r) === editingKey)
-          ) {
+          const updatedRow = newData.find((item) => getRowKeyValue(item) === key);
+          if (updatedRow && !changesRef.current.added.find((r) => getRowKeyValue(r) === key)) {
             const existingModified = changesRef.current.modified.find(
-              (r) => getRowKeyValue(r) === editingKey,
+              (r) => getRowKeyValue(r) === key,
             );
             if (existingModified) {
               Object.assign(existingModified, updatedRow);
@@ -665,7 +783,7 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
               changesRef.current.modified.push(updatedRow);
             }
           }
-          onChange?.(newData, changesRef.current);
+          onChangeRef.current?.(newData, changesRef.current);
           setEditingKey(null);
           setEditData({});
           return true;
@@ -676,7 +794,7 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
         let hasError = false;
 
         const results = await Promise.all(
-          data.map(async (record, i) => {
+          dataRef.current.map(async (record, i) => {
             const key = getRowKeyValue(record);
 
             const rowErrors = (
@@ -713,24 +831,10 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
         return { valid: !hasError, errors: newErrors };
       },
       refresh: () => {
-        // 触发重新渲染
-        setData([...data]);
+        setData([...dataRef.current]);
       },
     }),
-    [
-      data,
-      selectedKeys,
-      editingKey,
-      editData,
-      errors,
-      columns,
-      rowKey,
-      defaultRowData,
-      generateKey,
-      getRowKeyValue,
-      onChange,
-      onSelectionChange,
-    ],
+    [columns, rowKey, defaultRowData, generateKey, getRowKeyValue],
   );
 
   // 暴露实例
@@ -1058,10 +1162,8 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
 
   return (
     <div className={className} style={style}>
-      {
-        // eslint-disable-next-line react-hooks/refs
-        renderToolbarContent()
-      }
+      {/* eslint-disable-next-line react-hooks/refs -- renderToolbarContent reads tableInstance (stable memo with ref-based methods) */}
+      {renderToolbarContent()}
       <Table
         dataSource={data}
         columns={tableColumns}
@@ -1081,49 +1183,9 @@ const EasyTable = forwardRef<TableInstance, EasyTableProps>((props, ref) => {
         }
         getRowProps={getRowProps}
       />
-      {pagination !== false && (
-        <div
-          style={{
-            marginTop: 16,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <span style={{ color: "#666" }}>共 {pagination?.total || data.length} 条</span>
-          {pagination && pagination.total && pagination.total > (pagination.pageSize || 10) && (
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <Button
-                size="small"
-                disabled={(pagination.current || 1) <= 1}
-                onClick={() =>
-                  pagination.onChange?.((pagination.current || 1) - 1, pagination.pageSize || 10)
-                }
-              >
-                上一页
-              </Button>
-              <span>
-                第 {pagination.current || 1} /{" "}
-                {Math.ceil((pagination.total || 0) / (pagination.pageSize || 10))} 页
-              </span>
-              <Button
-                size="small"
-                disabled={
-                  (pagination.current || 1) >=
-                  Math.ceil((pagination.total || 0) / (pagination.pageSize || 10))
-                }
-                onClick={() =>
-                  pagination.onChange?.((pagination.current || 1) + 1, pagination.pageSize || 10)
-                }
-              >
-                下一页
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-      {// eslint-disable-next-line react-hooks/refs
-      renderFooter?.(tableInstance)}
+      {pagination !== false && <PaginationBar pagination={pagination} dataLength={data.length} />}
+      {/* eslint-disable-next-line react-hooks/refs -- renderFooter receives tableInstance (stable memo with ref-based methods) */}
+      {renderFooter?.(tableInstance)}
     </div>
   );
 });
