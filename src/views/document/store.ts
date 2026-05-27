@@ -186,6 +186,22 @@ const documents: DocumentData[] = [
         relatedDate: "2024-01-20",
         relatedPerson: "张三",
       },
+      {
+        id: 2,
+        relatedCode: "REB2024001",
+        relatedType: "reimbursement",
+        relatedName: "服务器采购报账单",
+        relatedDate: "2024-01-25",
+        relatedPerson: "李四",
+      },
+      {
+        id: 3,
+        relatedCode: "RET2024001",
+        relatedType: "return",
+        relatedName: "故障设备退货单",
+        relatedDate: "2024-02-01",
+        relatedPerson: "王五",
+      },
     ],
   },
   {

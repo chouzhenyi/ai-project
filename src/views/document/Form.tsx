@@ -5,6 +5,7 @@ import ActionBar from "./components/ActionBar";
 import BasicInfoSection from "./components/BasicInfoSection";
 import ModuleSection from "./components/ModuleSection";
 import ModuleDrawer from "./components/ModuleDrawer";
+import RelatedDocSection from "./components/RelatedDocSection";
 import useDocumentForm from "./hooks/useDocumentForm";
 import { MODULE_CONFIG } from "./config";
 
@@ -56,16 +57,20 @@ const DocumentForm = () => {
         onChange={onBasicInfoChange}
       />
 
-      {Object.keys(MODULE_CONFIG).map((moduleKey) => (
-        <ModuleSection
-          key={moduleKey}
-          config={MODULE_CONFIG[moduleKey]}
-          dataSource={moduleData[moduleKey] || []}
-          onAdd={() => openDrawer(moduleKey, "create")}
-          onEdit={(record) => openDrawer(moduleKey, "edit", record)}
-          onDelete={(rowId) => handleModuleDelete(moduleKey, rowId)}
-        />
-      ))}
+      {Object.keys(MODULE_CONFIG)
+        .filter((k) => k !== "relatedDoc")
+        .map((moduleKey) => (
+          <ModuleSection
+            key={moduleKey}
+            config={MODULE_CONFIG[moduleKey]}
+            dataSource={moduleData[moduleKey] || []}
+            onAdd={() => openDrawer(moduleKey, "create")}
+            onEdit={(record) => openDrawer(moduleKey, "edit", record)}
+            onDelete={(rowId) => handleModuleDelete(moduleKey, rowId)}
+          />
+        ))}
+
+      <RelatedDocSection dataSource={moduleData.relatedDoc || []} />
 
       <ModuleDrawer
         open={drawerOpen}
