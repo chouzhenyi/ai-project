@@ -12,6 +12,7 @@ const ItemForm = lazy(() => import("../views/items/Form"));
 const Dashboard = lazy(() => import("../views/dashboard"));
 const ContainersPage = lazy(() => import("../views/containers"));
 const TransactionsPage = lazy(() => import("../views/transactions"));
+const PerformancePage = lazy(() => import("../views/performanceOptimization"));
 
 const menuItems = [
   { key: "/", label: "仪表盘" },
@@ -21,6 +22,7 @@ const menuItems = [
   { key: "/document", label: "单据管理" },
   { key: "/form", label: "表单示例" },
   { key: "/table", label: "表格示例" },
+  { key: "/performance", label: "性能优化" },
   { key: "/about", label: "关于" },
 ];
 
@@ -28,9 +30,10 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const selectedKey = ["/document", "/items", "/containers", "/transactions"].find(
-    (k) => location.pathname.startsWith(k)
-  ) || location.pathname;
+  const selectedKey =
+    ["/document", "/items", "/containers", "/transactions", "/performance"].find((k) =>
+      location.pathname.startsWith(k),
+    ) || location.pathname;
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
@@ -106,6 +109,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<div>加载中...</div>}>
             <Table />
+          </Suspense>
+        ),
+      },
+      {
+        path: "performance",
+        element: (
+          <Suspense fallback={<div>加载中...</div>}>
+            <PerformancePage />
           </Suspense>
         ),
       },

@@ -1,0 +1,116 @@
+.perf-page {
+  padding: 24px;
+}
+
+.perf-badge {
+  animation: countPop 200ms ease-out;
+}
+
+.perf-badge-danger {
+  animation:
+    countPop 200ms ease-out,
+    dangerPulse 1s infinite;
+}
+
+.perf-child-wrapper {
+  padding: 12px 16px;
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: border-color 200ms;
+}
+
+.perf-child-wrapper-rendered {
+  animation: renderFlash 400ms ease-out;
+}
+
+.perf-child-wrapper-memo {
+  animation: cacheHit 2s infinite;
+}
+
+.perf-child-wrapper-danger {
+  animation: dangerPulse 1s infinite;
+  border-color: #ff4d4f;
+}
+
+.perf-timeline {
+  position: relative;
+  padding: 16px 0;
+}
+
+.perf-timeline-item {
+  position: relative;
+  padding-left: 24px;
+  margin-bottom: 8px;
+}
+
+.perf-timeline-item::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #1890ff;
+}
+
+.perf-timeline-item-stale::before {
+  background: #ff4d4f;
+}
+
+.perf-timeline-item-fresh::before {
+  background: #52c41a;
+}
+
+@keyframes countPop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes renderFlash {
+  0% {
+    box-shadow: inset 0 0 0 2px rgba(255, 77, 79, 0.6);
+  }
+  100% {
+    box-shadow: inset 0 0 0 2px transparent;
+  }
+}
+
+@keyframes cacheHit {
+  0%,
+  100% {
+    border-color: rgba(82, 196, 26, 0.3);
+  }
+  50% {
+    border-color: rgba(82, 196, 26, 0.8);
+  }
+}
+
+@keyframes dangerPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
